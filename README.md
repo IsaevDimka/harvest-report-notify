@@ -1,4 +1,5 @@
-# Harvest telegram notify
+# Automatic harvest report notifications 
+`v0.0.1`
 
 __FEATURED TODO__
 
