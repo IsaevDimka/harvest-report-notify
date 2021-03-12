@@ -1,7 +1,11 @@
-#!/usr/bin/env php
-<?php
+<?php declare(strict_types=1);
+
 define('DEBUG_START', microtime(true));
-date_default_timezone_set('Asia/Ho_Chi_Minh');
+
+require __DIR__.'/vendor/autoload.php';
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+$dotenv->load();
 
 /**
  * use
@@ -12,7 +16,6 @@ date_default_timezone_set('Asia/Ho_Chi_Minh');
  */
 class HarvestReportNotify
 {
-
     public const DATE_FORMAT = 'Y-m-d';
 
     private const HARVEST_API_BASE_URI = 'https://api.harvestapp.com/v2/';
@@ -34,13 +37,13 @@ class HarvestReportNotify
         $this->telegram_chat_id     = $config['telegram_chat_id'];
     }
 
-    public function getTimeEntries($from = null, $to = null)
+    public function getTimeEntries($from, $to)
     {
         $params  = [
             'access_token' => $this->harvest_access_token,
             'account_id'   => $this->harvest_account_id,
-            'from'         => $from ?? date(self::DATE_FORMAT),
-            'to'           => $to ?? date(self::DATE_FORMAT),
+            'from'         => $from,
+            'to'           => $to,
         ];
         $api_url = self::HARVEST_API_BASE_URI . self::HARVEST_ENDPOINT . '?' . http_build_query($params);
 
@@ -54,17 +57,18 @@ class HarvestReportNotify
      */
     public function execute($from = null, $to = null)
     {
-        print_r('now: ' . date('Y-m-d H:i:s') . PHP_EOL);
+        $date_from = $from ?: date(self::DATE_FORMAT);
+        $date_to = $to ?: date(self::DATE_FORMAT);
 
-        $time_entries       = $this->getTimeEntries($from, $to);
+        if($date_from == $date_to) {
+            $text = '#TimeReport for ' . $date_from . ' (' . date_create_from_format(self::DATE_FORMAT, $date_from)->format('l') . ')' . PHP_EOL . PHP_EOL;
+        }else{
+            $text = '#TimeReport from ' . $date_from . ' to ' . $date_to . PHP_EOL . PHP_EOL;
+        }
+
+        $time_entries       = $this->getTimeEntries($date_from, $date_to);
         $time_entries_data  = \json_decode($time_entries['data'], true);
         $time_entries_items = $time_entries_data['time_entries'];
-
-        if($from == $to) {
-            $text = '#TimeReport for ' . $from . ' (' . date('l') . ')' . PHP_EOL . PHP_EOL;
-        }else{
-            $text = '#TimeReport from ' . $from . ' to ' . $to . PHP_EOL . PHP_EOL;
-        }
 
         $total_hours         = 0;
         $total_rounded_hours = 0;
@@ -117,7 +121,6 @@ class HarvestReportNotify
     private static function sendRequest($url, $method = 'GET', array $params = [], array $headers = [], $pause_time = 3, $retry = 1, $referer_url = '')
     {
         try{
-
             /**
              * $url - адрес страницы-источника
              * $referer_url - адрес страницы для поля REFERER
@@ -181,7 +184,7 @@ class HarvestReportNotify
      *
      * @return string
      */
-    public static function formatDuration($seconds)
+    public static function formatElapsed($seconds) : string
     {
         if($seconds < 0.001) {
             return round($seconds * 1000000) . 'μs';
@@ -193,6 +196,7 @@ class HarvestReportNotify
     }
 
 }
+date_default_timezone_set($_ENV['TIMEZONE']);
 
 $shortopts   = "";
 $shortopts   .= "f::";
@@ -203,12 +207,12 @@ $from = $cli_options['f'] ?? date(HarvestReportNotify::DATE_FORMAT);
 $to   = $cli_options['t'] ?? date(HarvestReportNotify::DATE_FORMAT);
 
 $config = [
-    'harvest_account_id'   => '',
-    'harvest_access_token' => '',
-    'telegram_bot_token'   => '',
-    'telegram_chat_id'     => '',
+    'harvest_account_id'   => (int) $_ENV['HARVEST_ACCOUNT_ID'],
+    'harvest_access_token' => $_ENV['HARVEST_ACCESS_TOKEN'],
+    'telegram_bot_token'   => $_ENV['TELEGRAM_BOT_TOKEN'],
+    'telegram_chat_id'     => $_ENV['TELEGRAM_CHAT_ID'],
 ];
 
 (new HarvestReportNotify($config))->execute($from, $to);
-$duration = HarvestReportNotify::formatDuration(microtime(true) - DEBUG_START);
+$duration = HarvestReportNotify::formatElapsed(microtime(true) - DEBUG_START);
 print_r("duration: " . $duration . PHP_EOL);

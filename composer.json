@@ -1,0 +1,14 @@
+{
+    "name": "isaevdimka/harvest-telegram-reports",
+    "description": "Automatic harvest report notifications",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Isaev Dimka",
+            "email": "isaevdimka@gmail.com"
+        }
+    ],
+    "require": {
+        "vlucas/phpdotenv": "^5.3"
+    }
+}
