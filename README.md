@@ -8,8 +8,9 @@ __FEATURED TODO__
 
 __Installations__
 
-1. Run `cp .env.example .env`
-2. Make Personal Access Token `https://id.getharvest.com/oauth2/access_tokens/new`
-3. Make telegram bot & added public channel
+1. Run `composer install`
+2. Run `cp .env.example .env`
+3. Make Personal Access Token `https://id.getharvest.com/oauth2/access_tokens/new`
+4. Make telegram bot & added public channel
 
 Example using: `php HarvestReportNotify.php -f"2020-06-25" -t"2020-06-25"`
